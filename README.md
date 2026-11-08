@@ -1,6 +1,6 @@
 # Event Ready
 
-Your interface changes to suit what you are doing. Choose what to hide in a party, a dungeon, a raid or a battleground. When you are solo again, everything goes back to your normal settings. Built for **World of Warcraft: Forever**.
+Your interface changes to suit what you are doing. Give a party, a dungeon, a raid or a battleground its own nameplate and name settings. When you are solo again, everything goes back to your normal settings. Built for **World of Warcraft: Forever**.
 
 > **Alpha.** Not yet tested in the live client. Please report any problems.
 
@@ -15,18 +15,21 @@ Your interface changes to suit what you are doing. Choose what to hide in a part
 | Battleground | Inside a PvP battleground |
 | Arena | Inside an arena |
 
-For each one, tick what to hide, using the same names as the game's Options > Nameplates page:
+Each situation has its own **look**: anything on the game's Options > Nameplates page, including the Names, the Style, Cast bar information, Aggro display, auras, size and class colours. It doesn't just hide things.
 
-- **Names:** friendly players, friendly minions, enemy players, enemy minions, critters and companions, my name, my secondary name.
-- **Nameplates:** friendly player nameplates, friendly NPC nameplates, enemy nameplates.
+Every situation starts with your normal (solo) settings, so turning the addon on changes nothing. Then change only what you want:
 
-New profiles hide friendly player names, friendly minion names and friendly player nameplates in every situation. Only options this game supports are listed.
+1. Options > AddOns > Event Ready, pick a situation, then click **Edit the ... look**.
+2. The game's Nameplates page opens, showing that situation's look. Change anything.
+3. Click **Save** on the Event Ready bar at the top of the screen. **Cancel** keeps it as it was.
 
-If you change one of these settings yourself in the game's options while it is hidden, your change is kept. The game does not allow these changes during combat, so they wait until combat ends.
+The settings page lists what is different from your normal settings, with a **Reset** button for each item. **Copy to every situation** gives all situations the same look. Settings you have not changed in a situation follow your normal ones, so if you change your normal settings later, those changes carry over.
+
+If you change a setting yourself in the game's options while a look is on, your change is kept. The game does not allow these changes during combat, so they wait until combat ends. If you log out in the middle of editing, the edit is cancelled at your next login.
 
 ## Profiles
 
-A profile holds your choices for every situation. All your characters can see every profile: several characters can use the same one (Default), or a character can have its own. On the Profiles page: **New profile**, **Own profile for this character**, **Use**, **Copy to current**, **Delete** and **Reset current profile**.
+A profile holds the looks for every situation. All your characters can see every profile: several characters can use the same one (Default), or a character can have its own. On the Profiles page: **New profile**, **Own profile for this character**, **Use**, **Copy to current**, **Delete** and **Reset current profile**.
 
 ## Commands
 
@@ -34,7 +37,8 @@ A profile holds your choices for every situation. All your characters can see ev
 |---|---|
 | `/evr` | Open the settings (Options > AddOns > Event Ready) |
 | `/evr on` / `off` | Turn it on or off |
-| `/evr status` | Your situation, profile and what is hidden |
+| `/evr status` | Your situation, profile and what each situation changes |
+| `/evr save` / `cancel` | Finish editing a look |
 | `/evr profile [name]` | List profiles, or switch this character to one |
 | `/evr watch` | Print game settings as you change them (for bug reports) |
 

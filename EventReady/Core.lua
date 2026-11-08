@@ -1,41 +1,58 @@
--- Event Ready: switches parts of your interface to suit what you are doing (party, dungeon,
--- raid, battleground...) and puts everything back as you had it when you are solo again.
+-- Event Ready: changes your interface to suit what you are doing (party, dungeon, raid,
+-- battleground...) and puts everything back to your normal settings when you are solo again.
 --
--- Core: situations, profiles, and the engine that hides and restores the game's settings.
+-- Each situation starts the same as your normal (solo) settings. You change its look on the
+-- game's own Options > Nameplates page in "edit" mode, and Event Ready remembers only the
+-- settings you changed for that situation.
 local ADDON, ns = ...
 ns.name = ADDON
 
 ---------------------------------------------------------------------------
--- What can be switched. Each option controls one or more of the game's own settings (CVars).
--- Options whose settings this game does not have are left out everywhere.
+-- The settings Event Ready can switch: everything on the game's Options > Nameplates page.
+-- Names come from Blizzard's own settings code. Settings this game does not have are skipped.
 ---------------------------------------------------------------------------
 
-ns.OPTIONS = {
-    -- Names over characters (Options > Nameplates > Names in the game)
-    { key = "friendlyNames", group = "Names", label = "Friendly players",
-      cvars = { "UnitNameFriendlyPlayerName" } },
-    { key = "friendlyMinions", group = "Names", label = "Friendly minions (pets, guardians, totems)",
-      cvars = { "UnitNameFriendlyPetName", "UnitNameFriendlyGuardianName", "UnitNameFriendlyTotemName",
-                "UnitNameFriendlyMinionName" } },
-    { key = "enemyNames", group = "Names", label = "Enemy players",
-      cvars = { "UnitNameEnemyPlayerName" } },
-    { key = "enemyMinions", group = "Names", label = "Enemy minions (pets, guardians, totems)",
-      cvars = { "UnitNameEnemyPetName", "UnitNameEnemyGuardianName", "UnitNameEnemyTotemName",
-                "UnitNameEnemyMinionName" } },
-    { key = "critters", group = "Names", label = "Critters and companions",
-      cvars = { "UnitNameNonCombatCreatureName" } },
-    { key = "ownName", group = "Names", label = "My name", cvars = { "UnitNameOwn" } },
-    { key = "ownSurname", group = "Names", label = "My secondary name", cvars = { "UnitSurnameOwn" } },
-    -- Health-bar nameplates (Options > Nameplates > Nameplates in the game)
-    { key = "friendlyPlates", group = "Nameplates", label = "Friendly player nameplates",
-      cvars = { "nameplateShowFriendlyPlayers", "nameplateShowFriends" } },
-    { key = "friendlyNPCPlates", group = "Nameplates", label = "Friendly NPC nameplates",
-      cvars = { "nameplateShowFriendlyNPCs" } },
-    { key = "enemyPlates", group = "Nameplates", label = "Enemy nameplates",
-      cvars = { "nameplateShowEnemies" } },
+ns.GROUPS = {
+    -- Names
+    { label = "My name", section = "Names", cvars = { "UnitNameOwn" } },
+    { label = "My secondary name", section = "Names", cvars = { "UnitSurnameOwn" } },
+    { label = "NPC names", section = "Names", cvars = { "UnitNameNPC", "UnitNameFriendlySpecialNPCName",
+        "UnitNameHostleNPC", "UnitNameInteractiveNPC", "ShowQuestUnitCircles" } },
+    { label = "Critters and companions", section = "Names", cvars = { "UnitNameNonCombatCreatureName" } },
+    { label = "Friendly player names", section = "Names", cvars = { "UnitNameFriendlyPlayerName" } },
+    { label = "Friendly minion names", section = "Names", cvars = { "UnitNameFriendlyMinionName",
+        "UnitNameFriendlyPetName", "UnitNameFriendlyGuardianName", "UnitNameFriendlyTotemName" } },
+    { label = "Enemy player names", section = "Names", cvars = { "UnitNameEnemyPlayerName" } },
+    { label = "Enemy minion names", section = "Names", cvars = { "UnitNameEnemyMinionName",
+        "UnitNameEnemyPetName", "UnitNameEnemyGuardianName", "UnitNameEnemyTotemName" } },
+    -- Nameplates
+    { label = "Always show nameplates", section = "Nameplates", cvars = { "nameplateShowAll" } },
+    { label = "Enemy unit nameplates", section = "Nameplates", cvars = { "nameplateShowEnemies" } },
+    { label = "Enemy minion nameplates", section = "Nameplates", cvars = { "nameplateShowEnemyMinions" } },
+    { label = "Minor enemy nameplates", section = "Nameplates", cvars = { "nameplateShowEnemyMinus" } },
+    { label = "Friendly player nameplates", section = "Nameplates", cvars = { "nameplateShowFriendlyPlayers" } },
+    { label = "Friendly minion nameplates", section = "Nameplates", cvars = { "nameplateShowFriendlyPlayerMinions" } },
+    { label = "Only show names (friendly)", section = "Nameplates", cvars = { "nameplateShowOnlyNameForFriendlyPlayerUnits" } },
+    { label = "Class colour for names (friendly)", section = "Nameplates", cvars = { "nameplateUseClassColorForFriendlyPlayerUnitNames" } },
+    { label = "Realm names (friendly)", section = "Nameplates", cvars = { "nameplateShowFriendlyRealmName" } },
+    { label = "Friendly NPC nameplates", section = "Nameplates", cvars = { "nameplateShowFriendlyNpcs", "nameplateShowFriendlyNPCs" } },
+    { label = "Offscreen nameplates", section = "Nameplates", cvars = { "nameplateShowOffscreen" } },
+    { label = "Stack nameplates", section = "Nameplates", cvars = { "nameplateStackingTypes" } },
+    { label = "Size", section = "Nameplates", cvars = { "nameplateSize" } },
+    { label = "Buff/debuff scale", section = "Nameplates", cvars = { "nameplateAuraScale" } },
+    { label = "Style", section = "Nameplates", cvars = { "nameplateStyle" } },
+    { label = "Nameplate information", section = "Nameplates", cvars = { "nameplateInfoDisplay" } },
+    { label = "Cast bar information", section = "Nameplates", cvars = { "nameplateCastBarDisplay" } },
+    { label = "Aggro display", section = "Nameplates", cvars = { "nameplateThreatDisplay" } },
+    { label = "Enemy NPC buffs/debuffs", section = "Nameplates", cvars = { "nameplateEnemyNpcAuraDisplay" } },
+    { label = "Enemy player buffs/debuffs", section = "Nameplates", cvars = { "nameplateEnemyPlayerAuraDisplay" } },
+    { label = "Friendly player buffs/debuffs", section = "Nameplates", cvars = { "nameplateFriendlyPlayerAuraDisplay" } },
+    { label = "Debuff padding", section = "Nameplates", cvars = { "nameplateDebuffPadding" } },
+    { label = "Simplify nameplates", section = "Nameplates", cvars = { "nameplateSimplifiedTypes" } },
+    { label = "Nameplate class colour", section = "Nameplates", cvars = { "nameplateShowFriendlyClassColor", "nameplateShowClassColor" } },
 }
 
--- Situations, in the order they are shown. Solo is your normal setup and has no options.
+-- Situations, in the order they are shown. Solo is your normal setup.
 ns.SITUATIONS = {
     { key = "party", label = "Party (open world)", hint = "In a party outside dungeons and raids: questing together." },
     { key = "raidgroup", label = "Raid (open world)", hint = "In a raid group outside dungeons and raids: world bosses, large groups." },
@@ -47,17 +64,39 @@ ns.SITUATIONS = {
 ns.SITUATION_LABEL = { solo = "Solo" }
 for _, s in ipairs(ns.SITUATIONS) do ns.SITUATION_LABEL[s.key] = s.label end
 
--- New profiles hide friendly nameplates, names and minion names in every group situation.
-local DEFAULT_HIDE = { friendlyPlates = true, friendlyNames = true, friendlyMinions = true }
+-- v0.1 stored "hide" ticks; each became "this setting off" in the new format.
+local OLD_HIDE = {
+    friendlyPlates = { "nameplateShowFriendlyPlayers" },
+    friendlyNames = { "UnitNameFriendlyPlayerName" },
+    friendlyMinions = { "UnitNameFriendlyMinionName", "UnitNameFriendlyPetName", "UnitNameFriendlyGuardianName", "UnitNameFriendlyTotemName" },
+    friendlyNPCPlates = { "nameplateShowFriendlyNpcs" },
+    critters = { "UnitNameNonCombatCreatureName" },
+    enemyNames = { "UnitNameEnemyPlayerName" },
+    enemyMinions = { "UnitNameEnemyMinionName", "UnitNameEnemyPetName", "UnitNameEnemyGuardianName", "UnitNameEnemyTotemName" },
+    enemyPlates = { "nameplateShowEnemies" },
+    ownName = { "UnitNameOwn" },
+    ownSurname = { "UnitSurnameOwn" },
+}
 
-function ns.NewProfileData()
-    local p = { enabled = true, situations = {} }
-    for _, s in ipairs(ns.SITUATIONS) do
-        local hide = {}
-        for k, v in pairs(DEFAULT_HIDE) do hide[k] = v end
-        p.situations[s.key] = { hide = hide }
-    end
-    return p
+---------------------------------------------------------------------------
+-- Helpers
+---------------------------------------------------------------------------
+
+function ns.Print(msg) print("|cff7fd4ffEvent Ready|r: " .. tostring(msg)) end
+
+local applying = false   -- true while Event Ready changes a setting itself
+
+local function Get(name)
+    local ok, v = pcall(GetCVar, name)
+    if ok and v ~= nil and not (issecretvalue and issecretvalue(v)) then return tostring(v) end
+end
+ns.Get = Get
+
+local function Set(name, value)
+    applying = true
+    local ok = pcall(SetCVar, name, value)
+    applying = false
+    return ok
 end
 
 local function DeepCopy(t)
@@ -67,42 +106,60 @@ local function DeepCopy(t)
     return c
 end
 
----------------------------------------------------------------------------
--- Helpers
----------------------------------------------------------------------------
-
-function ns.Print(msg) print("|cff7fd4ffEvent Ready|r: " .. tostring(msg)) end
-
-local applying = false
-
-local function Get(name)
-    local ok, v = pcall(GetCVar, name)
-    if ok then return v end
-end
-
-local function Set(name, value)
-    applying = true
-    local ok = pcall(SetCVar, name, value)
-    applying = false
-    return ok
-end
-
--- The settings an option controls that exist in this game.
-function ns.Present(opt)
+-- Every managed setting that exists in this game.
+local presentCache
+function ns.Managed()
+    if presentCache then return presentCache end
     local list = {}
-    for _, name in ipairs(opt.cvars) do
-        if Get(name) ~= nil then list[#list + 1] = name end
+    for _, g in ipairs(ns.GROUPS) do
+        for _, name in ipairs(g.cvars) do
+            if Get(name) ~= nil then list[#list + 1] = name end
+        end
     end
+    presentCache = list
     return list
+end
+
+function ns.GroupPresent(g)
+    for _, name in ipairs(g.cvars) do
+        if Get(name) ~= nil then return true end
+    end
+    return false
 end
 
 ---------------------------------------------------------------------------
 -- Saved data
---   EventReadyDB (account): profiles, and the normal values of anything currently hidden
+--   EventReadyDB (account): profiles, and your normal values of anything switched right now
 --   EventReadyCharDB (character): which profile this character uses
+-- A profile: { enabled = true, situations = { dungeon = { values = { cvar = value } }, ... } }
+-- Values are only the settings that differ from your normal ones in that situation.
 ---------------------------------------------------------------------------
 
 local db, chardb
+
+function ns.NewProfileData()
+    local p = { enabled = true, situations = {} }
+    for _, s in ipairs(ns.SITUATIONS) do p.situations[s.key] = { values = {} } end
+    return p
+end
+
+local function Complete(p)
+    p.situations = p.situations or {}
+    if p.enabled == nil then p.enabled = true end
+    for _, s in ipairs(ns.SITUATIONS) do
+        local sit = p.situations[s.key] or {}
+        p.situations[s.key] = sit
+        sit.values = sit.values or {}
+        if sit.hide then   -- from v0.1
+            for key, on in pairs(sit.hide) do
+                if on and OLD_HIDE[key] then
+                    for _, cvar in ipairs(OLD_HIDE[key]) do sit.values[cvar] = "0" end
+                end
+            end
+            sit.hide = nil
+        end
+    end
+end
 
 function ns.CharKey()
     local name = UnitName("player")
@@ -133,24 +190,19 @@ function ns.ProfileNames()
     return names
 end
 
--- Fill in anything missing (new situations or options added in later versions).
-local function Complete(p)
-    p.situations = p.situations or {}
-    if p.enabled == nil then p.enabled = true end
-    for _, s in ipairs(ns.SITUATIONS) do
-        p.situations[s.key] = p.situations[s.key] or { hide = DeepCopy(DEFAULT_HIDE) }
-        p.situations[s.key].hide = p.situations[s.key].hide or {}
-    end
+function ns.Values(situation)
+    local s = ns.Profile().situations[situation]
+    return s and s.values or {}
 end
-
----------------------------------------------------------------------------
--- Profiles
----------------------------------------------------------------------------
 
 local function Changed()
     ns.Apply()
     if ns.RefreshOptions then ns.RefreshOptions() end
 end
+
+---------------------------------------------------------------------------
+-- Profiles
+---------------------------------------------------------------------------
 
 local function ValidName(name)
     name = tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", "")
@@ -158,7 +210,6 @@ local function ValidName(name)
     return name
 end
 
--- Create a profile (optionally copied from another) and switch this character to it.
 function ns.NewProfile(name, copyFrom)
     name = ValidName(name)
     if not name then return false, "Please give the profile a name (up to 40 characters)." end
@@ -177,7 +228,6 @@ function ns.UseProfile(name)
     return true
 end
 
--- Copy another profile's settings into the one this character uses.
 function ns.CopyIntoCurrent(from)
     local src = db.profiles[from]
     if not src then return false, "No profile called \"" .. tostring(from) .. "\"." end
@@ -202,7 +252,6 @@ function ns.ResetProfile()
     return true
 end
 
--- A profile of this character's own, copied from the one in use.
 function ns.ProfileForThisCharacter()
     local name = ns.CharKey()
     if db.profiles[name] then return ns.UseProfile(name) end
@@ -210,7 +259,50 @@ function ns.ProfileForThisCharacter()
 end
 
 ---------------------------------------------------------------------------
--- Situations
+-- Situation settings
+---------------------------------------------------------------------------
+
+-- Put this situation back to your normal settings (everything, or one group).
+function ns.ResetSituation(situation, group)
+    local values = ns.Values(situation)
+    if group then
+        for _, cvar in ipairs(group.cvars) do values[cvar] = nil end
+    else
+        for k in pairs(values) do values[k] = nil end
+    end
+    Changed()
+end
+
+function ns.CopyToEverySituation(from)
+    local src = ns.Values(from)
+    for _, s in ipairs(ns.SITUATIONS) do
+        if s.key ~= from then ns.Profile().situations[s.key].values = DeepCopy(src) end
+    end
+    Changed()
+end
+
+-- What differs from normal in a situation, one entry per group: { group, text }.
+function ns.Differences(situation)
+    local values, list = ns.Values(situation), {}
+    for _, g in ipairs(ns.GROUPS) do
+        local changed, allOff, allOn = false, true, true
+        for _, cvar in ipairs(g.cvars) do
+            local v = values[cvar]
+            if v ~= nil then
+                changed = true
+                if v ~= "0" then allOff = false end
+                if v ~= "1" then allOn = false end
+            end
+        end
+        if changed then
+            list[#list + 1] = { group = g, text = allOff and "off" or allOn and "on" or "changed" }
+        end
+    end
+    return list
+end
+
+---------------------------------------------------------------------------
+-- Where you are
 ---------------------------------------------------------------------------
 
 function ns.Situation()
@@ -226,27 +318,15 @@ function ns.Situation()
     return "solo"
 end
 
--- Is this option hidden in this situation, in this profile?
-function ns.IsHidden(situation, key)
-    local s = ns.Profile().situations[situation]
-    return s ~= nil and s.hide[key] == true
-end
-
-function ns.SetHidden(situation, key, hide)
-    local s = ns.Profile().situations[situation]
-    if not s then return end
-    s.hide[key] = hide and true or nil
-    Changed()
-end
-
 ---------------------------------------------------------------------------
--- The engine: hide what the current situation asks for, restore everything else
+-- The engine: switch to the current situation's values; restore your normal ones otherwise
 ---------------------------------------------------------------------------
 
 local waiting = false
+local editing   -- { key = situation, base = { cvar = your normal value } } while editing a look
 
 function ns.Apply()
-    if not db then return end
+    if not db or editing then return end
     if InCombatLockdown() then
         waiting = true   -- the game does not allow these changes during combat
         return
@@ -254,20 +334,69 @@ function ns.Apply()
     waiting = false
     local situation = ns.Situation()
     local profile = ns.Profile()
-    local active = profile.enabled and situation ~= "solo"
-    for _, opt in ipairs(ns.OPTIONS) do
-        local hide = active and ns.IsHidden(situation, opt.key)
-        for _, name in ipairs(ns.Present(opt)) do
-            if hide and db.saved[name] == nil then
-                db.saved[name] = Get(name)     -- remember yours, then hide
-                Set(name, "0")
-            elseif not hide and db.saved[name] ~= nil then
-                Set(name, db.saved[name])      -- put yours back
-                db.saved[name] = nil
-            end
+    local values = (profile.enabled and situation ~= "solo") and ns.Values(situation) or {}
+    for _, cvar in ipairs(ns.Managed()) do
+        local target = values[cvar]
+        if target ~= nil then
+            if db.saved[cvar] == nil then db.saved[cvar] = Get(cvar) end   -- remember yours
+            if Get(cvar) ~= target then Set(cvar, target) end
+        elseif db.saved[cvar] ~= nil then
+            Set(cvar, db.saved[cvar])                                       -- put yours back
+            db.saved[cvar] = nil
         end
     end
     ns.lastSituation = situation
+end
+
+---------------------------------------------------------------------------
+-- Editing a situation's look on the game's own Options > Nameplates page
+---------------------------------------------------------------------------
+
+function ns.IsEditing() return editing and editing.key end
+
+function ns.StartEdit(situation)
+    if editing then return false, "You are already editing a look. Save or cancel it first." end
+    if InCombatLockdown() then return false, "Please wait until combat ends." end
+    -- Start from your normal settings, then show this situation's changes on top.
+    local wasEnabled = ns.Profile().enabled
+    ns.Profile().enabled = false
+    ns.Apply()
+    ns.Profile().enabled = wasEnabled
+    local base = {}
+    for _, cvar in ipairs(ns.Managed()) do base[cvar] = Get(cvar) end
+    editing = { key = situation, base = base }
+    db.editing = editing   -- kept across logouts, so an unfinished edit can be undone
+    for cvar, v in pairs(ns.Values(situation)) do
+        if base[cvar] ~= nil and Get(cvar) ~= v then Set(cvar, v) end
+    end
+    if ns.ShowEditBar then ns.ShowEditBar(situation) end
+    return true
+end
+
+function ns.FinishEdit(save)
+    if not editing then return false, "You are not editing a look." end
+    if InCombatLockdown() then return false, "Please wait until combat ends, then click Save or Cancel." end
+    local situation, base = editing.key, editing.base
+    if save then
+        -- Keep only what differs from your normal settings.
+        local values = {}
+        for _, cvar in ipairs(ns.Managed()) do
+            local now = Get(cvar)
+            if now ~= nil and now ~= base[cvar] then values[cvar] = now end
+        end
+        ns.Profile().situations[situation].values = values
+    end
+    for _, cvar in ipairs(ns.Managed()) do
+        if base[cvar] ~= nil and Get(cvar) ~= base[cvar] then Set(cvar, base[cvar]) end
+    end
+    editing = nil
+    db.editing = nil
+    if ns.HideEditBar then ns.HideEditBar() end
+    Changed()
+    local count = #ns.Differences(situation)
+    ns.Print(save and (ns.SITUATION_LABEL[situation] .. " look saved: " .. count .. " setting"
+        .. (count == 1 and "" or "s") .. " different from your normal ones.") or "edit cancelled; nothing changed.")
+    return true
 end
 
 ---------------------------------------------------------------------------
@@ -293,6 +422,14 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         return
     end
     if event == "PLAYER_LOGIN" then
+        -- An edit left unfinished (logged out mid-edit): put your normal settings back.
+        if db.editing and db.editing.base then
+            for cvar, v in pairs(db.editing.base) do
+                if Get(cvar) ~= nil and Get(cvar) ~= v then Set(cvar, v) end
+            end
+            db.editing = nil
+            ns.Print("an unfinished look edit was cancelled; your normal settings are back.")
+        end
         if ns.BuildOptions then
             local ok, err = pcall(ns.BuildOptions)
             if not ok then ns.Print("the settings page could not be built: " .. tostring(err)) end
@@ -302,8 +439,11 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     end
     if event == "CVAR_UPDATE" then
         if GetTime() < watchUntil then ns.Print("setting changed: " .. tostring(arg1) .. " = " .. tostring(arg2)) end
-        -- You changed one of the hidden settings yourself: keep your choice when you leave.
-        if not applying and db and type(arg1) == "string" and db.saved[arg1] ~= nil then db.saved[arg1] = nil end
+        -- You changed a switched setting yourself (not while editing a look): keep your choice.
+        if not applying and not editing and db and type(arg1) == "string" and db.saved[arg1] ~= nil then
+            db.saved[arg1] = nil
+        end
+        if editing and ns.RefreshOptions then ns.RefreshOptions() end
         return
     end
     if event == "PLAYER_REGEN_ENABLED" and not waiting then return end
@@ -334,11 +474,11 @@ SlashCmdList.EVENTREADY = function(msg)
         local situation = ns.Situation()
         ns.Print(string.format("%s, profile \"%s\", situation: %s.", ns.Profile().enabled and "on" or "off",
             chardb.profile, ns.SITUATION_LABEL[situation] or situation))
-        for _, opt in ipairs(ns.OPTIONS) do
-            local present = ns.Present(opt)
-            local state = #present == 0 and "not in this game"
-                or (situation ~= "solo" and ns.IsHidden(situation, opt.key) and "hidden now" or "shown")
-            print("  " .. opt.group .. ": " .. opt.label .. ": " .. state)
+        for _, s in ipairs(ns.SITUATIONS) do
+            local diffs = ns.Differences(s.key)
+            local parts = {}
+            for _, d in ipairs(diffs) do parts[#parts + 1] = d.group.label .. " " .. d.text end
+            print("  " .. s.label .. ": " .. (#parts == 0 and "same as normal" or table.concat(parts, ", ")))
         end
     elseif cmd == "profile" then
         if rest == "" then
@@ -347,6 +487,9 @@ SlashCmdList.EVENTREADY = function(msg)
             local ok, err = ns.UseProfile(rest)
             ns.Print(ok and ("now using \"" .. rest .. "\".") or err)
         end
+    elseif cmd == "save" or cmd == "cancel" then
+        local ok, err = ns.FinishEdit(cmd == "save")
+        if not ok then ns.Print(err) end
     elseif cmd == "watch" then
         watchUntil = GetTime() + 60
         ns.Print("watching for 60 seconds: every game setting you change is printed here.")
@@ -354,8 +497,9 @@ SlashCmdList.EVENTREADY = function(msg)
         ns.Print("commands:")
         print("  /evr - open the settings")
         print("  /evr on | off - turn Event Ready on or off")
-        print("  /evr status - your situation, profile and what is hidden")
+        print("  /evr status - your situation, profile and what each situation changes")
         print("  /evr profile [name] - list profiles, or switch this character to one")
+        print("  /evr save | cancel - finish editing a situation's look")
         print("  /evr watch - print game settings as you change them (for bug reports)")
     else
         if ns.OpenOptions then ns.OpenOptions() end

@@ -1,5 +1,5 @@
 -- Event Ready: settings pages in the game's Options > AddOns menu.
---   Event Ready  - on/off, pick a situation, tick what to hide in it
+--   Event Ready  - on/off, pick a situation, edit its look, see what differs from normal
 --   Profiles     - which profile this character uses; new, copy, delete, reset
 local _, ns = ...
 
@@ -39,6 +39,8 @@ end
 -- Main page
 ---------------------------------------------------------------------------
 
+local MAX_DIFFS = 14
+
 local function RefreshMain()
     if not main or not ns.db then return end
     local p = ns.Profile()
@@ -51,25 +53,40 @@ local function RefreshMain()
     for _, s in ipairs(ns.SITUATIONS) do
         if s.key == selected then main.hint:SetText(s.hint) end
     end
-    for _, row in ipairs(main.rows) do
-        row.cb:SetChecked(ns.IsHidden(selected, row.opt.key))
+    main.edit:SetText("Edit the " .. ns.SITUATION_LABEL[selected] .. " look")
+    local diffs = ns.Differences(selected)
+    main.diffTitle:SetText(#diffs == 0 and "This situation looks the same as your normal (solo) settings."
+        or "Different from your normal settings here:")
+    for i = 1, MAX_DIFFS do
+        local row, d = main.diffRows[i], diffs[i]
+        if d then
+            row.group = d.group
+            row.label:SetText(d.group.label .. ": |cffffffff" .. d.text .. "|r")
+            row.reset:Show()
+        else
+            row.group = nil
+            row.label:SetText("")
+            row.reset:Hide()
+        end
     end
+    main.more:SetText(#diffs > MAX_DIFFS and ("and " .. (#diffs - MAX_DIFFS) .. " more") or "")
 end
 
 local function BuildMain()
     local p = CreateFrame("Frame")
     p.name = "Event Ready"
     Label(p, "GameFontNormalLarge", 16, -16, "Event Ready")
-    Label(p, "GameFontHighlightSmall", 16, -40, "Your interface changes to suit what you are doing. Choose a situation "
-        .. "below and tick what to hide there. When you are solo again, everything goes back to your normal settings.", 560)
-    p.enabled = Check(p, 14, -72, "Turn on Event Ready", function(v)
+    Label(p, "GameFontHighlightSmall", 16, -40, "Your interface changes to suit what you are doing. Each situation "
+        .. "starts the same as your normal settings; edit its look to change anything on the game's Nameplates page. "
+        .. "When you are solo again, everything goes back to normal.", 560)
+    p.enabled = Check(p, 14, -84, "Turn on Event Ready", function(v)
         ns.Profile().enabled = v
         ns.Apply()
         RefreshMain()
     end)
-    p.status = Label(p, "GameFontNormal", 16, -106, "")
+    p.status = Label(p, "GameFontNormal", 16, -118, "")
 
-    Label(p, "GameFontNormal", 16, -134, "Situation:")
+    Label(p, "GameFontNormal", 16, -146, "Situation:")
     p.sitButtons = {}
     for i, s in ipairs(ns.SITUATIONS) do
         local b = Button(p, s.label, 150, function()
@@ -77,49 +94,98 @@ local function BuildMain()
             RefreshMain()
         end)
         local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
-        b:SetPoint("TOPLEFT", 100 + col * 156, -130 - row * 26)
+        b:SetPoint("TOPLEFT", 100 + col * 156, -142 - row * 26)
         b.key, b.label = s.key, s.label
         p.sitButtons[#p.sitButtons + 1] = b
     end
-    p.hint = Label(p, "GameFontHighlightSmall", 16, -186, "", 560)
+    p.hint = Label(p, "GameFontHighlightSmall", 16, -198, "", 560)
 
-    Label(p, "GameFontNormal", 16, -210, "Hide in this situation:")
-    p.rows = {}
-    local y = -232
-    local lastGroup
-    for _, opt in ipairs(ns.OPTIONS) do
-        if #ns.Present(opt) > 0 then
-            if opt.group ~= lastGroup then
-                Label(p, "GameFontNormalSmall", 28, y - 4, opt.group)
-                lastGroup = opt.group
-                y = y - 20
-            end
-            local row = { opt = opt }
-            row.cb = Check(p, 28, y, opt.label, function(v) ns.SetHidden(selected, opt.key, v) end)
-            p.rows[#p.rows + 1] = row
-            y = y - 26
-        end
-    end
-    if #p.rows == 0 then
-        Label(p, "GameFontHighlight", 28, y, "None of the settings Event Ready knows about exist in this game.")
-        y = y - 26
-    end
-    local copyAll = Button(p, "Copy these choices to every situation", 270, function()
-        local src = ns.Profile().situations[selected].hide
-        for _, s in ipairs(ns.SITUATIONS) do
-            if s.key ~= selected then
-                local hide = {}
-                for k, v in pairs(src) do hide[k] = v end
-                ns.Profile().situations[s.key].hide = hide
-            end
-        end
-        ns.Apply()
-        ns.Print("copied the " .. ns.SITUATION_LABEL[selected] .. " choices to every situation.")
+    p.edit = Button(p, "Edit the look", 220, function()
+        local ok, err = ns.StartEdit(selected)
+        if not ok then ns.Print(err) return end
+        ns.OpenNameplateOptions()
     end)
-    copyAll:SetPoint("TOPLEFT", 16, y - 10)
+    p.edit:SetPoint("TOPLEFT", 16, -220)
+    local copyAll = Button(p, "Copy to every situation", 180, function()
+        ns.CopyToEverySituation(selected)
+        ns.Print("copied the " .. ns.SITUATION_LABEL[selected] .. " look to every situation.")
+    end)
+    copyAll:SetPoint("LEFT", p.edit, "RIGHT", 8, 0)
+    local resetSit = Button(p, "Reset to normal", 140, function() ns.ResetSituation(selected) end)
+    resetSit:SetPoint("LEFT", copyAll, "RIGHT", 8, 0)
+
+    p.diffTitle = Label(p, "GameFontNormal", 16, -256, "", 560)
+    p.diffRows = {}
+    for i = 1, MAX_DIFFS do
+        local y = -278 - (i - 1) * 24
+        local row = {}
+        row.label = Label(p, "GameFontHighlight", 28, y - 4, "", 400)
+        row.reset = Button(p, "Reset", 70, function()
+            if row.group then ns.ResetSituation(selected, row.group) end
+        end)
+        row.reset:SetPoint("TOPLEFT", 440, y)
+        p.diffRows[i] = row
+    end
+    p.more = Label(p, "GameFontHighlightSmall", 28, -278 - MAX_DIFFS * 24, "")
     p:SetScript("OnShow", RefreshMain)
     main = p
     return p
+end
+
+---------------------------------------------------------------------------
+-- Editing bar: shown while you change a situation's look in the game's options
+---------------------------------------------------------------------------
+
+local editBar
+
+function ns.ShowEditBar(situation)
+    if not editBar then
+        local f = CreateFrame("Frame", "EventReadyEditBar", UIParent, "BackdropTemplate")
+        f:SetSize(560, 74)
+        f:SetPoint("TOP", UIParent, "TOP", 0, -12)
+        f:SetFrameStrata("FULLSCREEN_DIALOG")
+        f:SetToplevel(true)
+        if f.SetBackdrop then
+            f:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+                edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 14,
+                insets = { left = 3, right = 3, top = 3, bottom = 3 } })
+            f:SetBackdropColor(0.05, 0.08, 0.16, 0.95)
+        end
+        f.text = Label(f, "GameFontHighlight", 14, -12, "", 400)
+        local save = Button(f, "Save", 100, function()
+            local ok, err = ns.FinishEdit(true)
+            if not ok then ns.Print(err) end
+        end)
+        save:SetPoint("TOPRIGHT", -14, -10)
+        local cancel = Button(f, "Cancel", 100, function()
+            local ok, err = ns.FinishEdit(false)
+            if not ok then ns.Print(err) end
+        end)
+        cancel:SetPoint("TOPRIGHT", -14, -38)
+        editBar = f
+    end
+    editBar.text:SetText("Event Ready: editing the |cff7fd4ff" .. ns.SITUATION_LABEL[situation] .. "|r look. "
+        .. "Change anything under Options > Nameplates, then click Save. Cancel keeps it as it was.")
+    editBar:Show()
+end
+
+function ns.HideEditBar()
+    if editBar then editBar:Hide() end
+end
+
+-- Open the game's Options > Nameplates page if we can find it, else say where it is.
+function ns.OpenNameplateOptions()
+    local ok = pcall(function()
+        local label = NAMEPLATE_OPTIONS_LABEL or NAMEPLATES_LABEL or "Nameplates"
+        for _, cat in ipairs(SettingsPanel:GetAllCategories()) do
+            if cat:GetName() == label then
+                Settings.OpenToCategory(cat:GetID())
+                return
+            end
+        end
+        error("not found")
+    end)
+    if not ok then ns.Print("now open Options > Nameplates and change what you like.") end
 end
 
 ---------------------------------------------------------------------------
