@@ -1,6 +1,6 @@
 # Event Ready
 
-Your interface switches to suit what you are doing. Choose what to hide in a party, a dungeon, a raid or a battleground, and everything comes back as you had it when you are solo again. Built for **World of Warcraft: Forever**.
+Your interface changes to suit what you are doing. Choose what to hide in a party, a dungeon, a raid or a battleground. When you are solo again, everything goes back to your normal settings. Built for **World of Warcraft: Forever**.
 
 > **Alpha.** Not yet tested in the live client. Please report any problems.
 
@@ -8,20 +8,25 @@ Your interface switches to suit what you are doing. Choose what to hide in a par
 
 | Situation | When |
 |---|---|
-| Party | In a party outside an instance |
-| Raid group | In a raid group outside an instance |
-| Dungeon | Inside a 5-player instance |
-| Raid | Inside a raid instance |
+| Party (open world) | In a party outside dungeons and raids: questing together |
+| Raid (open world) | In a raid group outside dungeons and raids: world bosses, large groups |
+| Dungeon | Inside a dungeon (5-player instance), grouped or not |
+| Raid instance | Inside a raid instance |
 | Battleground | Inside a PvP battleground |
 | Arena | Inside an arena |
 
-For each one, tick what to hide: friendly or enemy nameplates, player names, pets and minions, critters, your own name. New profiles hide friendly nameplates, friendly names and friendly minion names in every situation. Only options this game supports are listed.
+For each one, tick what to hide, using the same names as the game's Options > Nameplates page:
 
-If you change one of these settings yourself while in a situation, your change is kept. The game does not allow these changes during combat, so they wait until combat ends.
+- **Names:** friendly players, friendly minions, enemy players, enemy minions, critters and companions, my name, my secondary name.
+- **Nameplates:** friendly player nameplates, friendly NPC nameplates, enemy nameplates.
+
+New profiles hide friendly player names, friendly minion names and friendly player nameplates in every situation. Only options this game supports are listed.
+
+If you change one of these settings yourself in the game's options while it is hidden, your change is kept. The game does not allow these changes during combat, so they wait until combat ends.
 
 ## Profiles
 
-Profiles are shared across your account. Characters can share one (Default), or a character can have its own. On the Profiles page: New, Profile for this character, Copy into mine, Delete and Reset.
+A profile holds your choices for every situation. All your characters can see every profile: several characters can use the same one (Default), or a character can have its own. On the Profiles page: **New profile**, **Own profile for this character**, **Use**, **Copy to current**, **Delete** and **Reset current profile**.
 
 ## Commands
 

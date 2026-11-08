@@ -11,34 +11,36 @@ ns.name = ADDON
 ---------------------------------------------------------------------------
 
 ns.OPTIONS = {
-    { key = "friendlyPlates", label = "Friendly player nameplates",
-      cvars = { "nameplateShowFriendlyPlayers", "nameplateShowFriends" } },
-    { key = "friendlyNames", label = "Friendly player names",
+    -- Names over characters (Options > Nameplates > Names in the game)
+    { key = "friendlyNames", group = "Names", label = "Friendly players",
       cvars = { "UnitNameFriendlyPlayerName" } },
-    { key = "friendlyMinions", label = "Friendly pets, minions, guardians and totems (names)",
+    { key = "friendlyMinions", group = "Names", label = "Friendly minions (pets, guardians, totems)",
       cvars = { "UnitNameFriendlyPetName", "UnitNameFriendlyGuardianName", "UnitNameFriendlyTotemName",
                 "UnitNameFriendlyMinionName" } },
-    { key = "friendlyNPCPlates", label = "Friendly NPC nameplates",
-      cvars = { "nameplateShowFriendlyNPCs" } },
-    { key = "critters", label = "Critter and companion names",
-      cvars = { "UnitNameNonCombatCreatureName" } },
-    { key = "enemyNames", label = "Enemy player names",
+    { key = "enemyNames", group = "Names", label = "Enemy players",
       cvars = { "UnitNameEnemyPlayerName" } },
-    { key = "enemyMinions", label = "Enemy pets, minions, guardians and totems (names)",
+    { key = "enemyMinions", group = "Names", label = "Enemy minions (pets, guardians, totems)",
       cvars = { "UnitNameEnemyPetName", "UnitNameEnemyGuardianName", "UnitNameEnemyTotemName",
                 "UnitNameEnemyMinionName" } },
-    { key = "enemyPlates", label = "Enemy nameplates",
+    { key = "critters", group = "Names", label = "Critters and companions",
+      cvars = { "UnitNameNonCombatCreatureName" } },
+    { key = "ownName", group = "Names", label = "My name", cvars = { "UnitNameOwn" } },
+    { key = "ownSurname", group = "Names", label = "My secondary name", cvars = { "UnitSurnameOwn" } },
+    -- Health-bar nameplates (Options > Nameplates > Nameplates in the game)
+    { key = "friendlyPlates", group = "Nameplates", label = "Friendly player nameplates",
+      cvars = { "nameplateShowFriendlyPlayers", "nameplateShowFriends" } },
+    { key = "friendlyNPCPlates", group = "Nameplates", label = "Friendly NPC nameplates",
+      cvars = { "nameplateShowFriendlyNPCs" } },
+    { key = "enemyPlates", group = "Nameplates", label = "Enemy nameplates",
       cvars = { "nameplateShowEnemies" } },
-    { key = "ownName", label = "My name", cvars = { "UnitNameOwn" } },
-    { key = "ownSurname", label = "My secondary name", cvars = { "UnitSurnameOwn" } },
 }
 
 -- Situations, in the order they are shown. Solo is your normal setup and has no options.
 ns.SITUATIONS = {
-    { key = "party", label = "Party", hint = "In a party outside an instance (questing, open world)." },
-    { key = "raidgroup", label = "Raid group", hint = "In a raid group outside an instance (world bosses, big groups)." },
-    { key = "dungeon", label = "Dungeon", hint = "Inside a dungeon (5-player instance)." },
-    { key = "raid", label = "Raid", hint = "Inside a raid instance." },
+    { key = "party", label = "Party (open world)", hint = "In a party outside dungeons and raids: questing together." },
+    { key = "raidgroup", label = "Raid (open world)", hint = "In a raid group outside dungeons and raids: world bosses, large groups." },
+    { key = "dungeon", label = "Dungeon", hint = "Inside a dungeon (5-player instance), grouped or not." },
+    { key = "raid", label = "Raid instance", hint = "Inside a raid instance." },
     { key = "battleground", label = "Battleground", hint = "Inside a PvP battleground." },
     { key = "arena", label = "Arena", hint = "Inside an arena." },
 }
@@ -179,7 +181,7 @@ end
 function ns.CopyIntoCurrent(from)
     local src = db.profiles[from]
     if not src then return false, "No profile called \"" .. tostring(from) .. "\"." end
-    if from == chardb.profile then return false, "That is the profile you are using." end
+    if from == chardb.profile then return false, "That is already the profile you are using." end
     db.profiles[chardb.profile] = DeepCopy(src)
     Changed()
     return true
@@ -187,7 +189,7 @@ end
 
 function ns.DeleteProfile(name)
     if name == "Default" then return false, "The Default profile cannot be deleted." end
-    if name == chardb.profile then return false, "You are using that profile. Switch to another first." end
+    if name == chardb.profile then return false, "This character is using that profile. Switch to another first." end
     if not db.profiles[name] then return false, "No profile called \"" .. tostring(name) .. "\"." end
     db.profiles[name] = nil
     Changed()
@@ -327,7 +329,7 @@ SlashCmdList.EVENTREADY = function(msg)
     if cmd == "on" or cmd == "off" then
         ns.Profile().enabled = (cmd == "on")
         Changed()
-        ns.Print(cmd == "on" and "on." or "off: your normal settings are back.")
+        ns.Print(cmd == "on" and "turned on." or "turned off: your normal settings are back.")
     elseif cmd == "status" then
         local situation = ns.Situation()
         ns.Print(string.format("%s, profile \"%s\", situation: %s.", ns.Profile().enabled and "on" or "off",
@@ -336,7 +338,7 @@ SlashCmdList.EVENTREADY = function(msg)
             local present = ns.Present(opt)
             local state = #present == 0 and "not in this game"
                 or (situation ~= "solo" and ns.IsHidden(situation, opt.key) and "hidden now" or "shown")
-            print("  " .. opt.label .. ": " .. state)
+            print("  " .. opt.group .. ": " .. opt.label .. ": " .. state)
         end
     elseif cmd == "profile" then
         if rest == "" then
