@@ -1,0 +1,9 @@
+package-as: EventReady
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - .gitignore
+  - tests

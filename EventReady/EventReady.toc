@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: Event Ready
+## Notes: Switches your interface to suit what you are doing (party, dungeon, raid, battleground) and restores it when you are solo again.
+## Author: FoobyGitHub
+## Version: @project-version@
+## SavedVariables: EventReadyDB
+## SavedVariablesPerCharacter: EventReadyCharDB
+## X-License: MIT
+
+Core.lua
+Options.lua
