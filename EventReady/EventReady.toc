@@ -6,6 +6,8 @@
 ## SavedVariables: EventReadyDB
 ## SavedVariablesPerCharacter: EventReadyCharDB
 ## X-License: MIT
+## X-Website: https://github.com/FoobyGitHub/event-ready
+## X-Curse-Project-ID: 1792171
 
 Core.lua
 Options.lua
